@@ -25,6 +25,8 @@ end;
 
 var
   LogCountStart : integer;
+const
+  Version = 1.3;
 
 Procedure AxeWielded;
 var
