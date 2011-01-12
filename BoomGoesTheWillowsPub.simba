@@ -1,0 +1,341 @@
+program BoomGoesTheWillows;
+{$define SMART}
+{$i srl/srl.scar}
+{$i Reflection/Reflection.simba}
+
+Const
+  TalkAboutLevel = False; // Do you want to type shizz if you level?
+
+Procedure DeclarePlayers;
+begin
+  HowManyPlayers := 1;
+  NumberOfPlayers(HowManyPlayers);
+  CurrentPlayer := 0;
+
+    with players[0] do
+  begin
+    Name := '';
+    Pass := '';
+    Active := True;
+    Pin := ''; //Leave blank if no pin
+    Loc := 'chopped trees'; //Read the thread to see valid arguments.
+    Integers[4]:= 1000; //Amount of loads you want to do.
+  end;
+end;
+
+var
+  LogCountStart : integer;
+
+Procedure AxeWielded;
+var
+Equipped : integer;
+TheIDs: TIntegerArray;
+Hatchet : TInvItemArray;
+Begin
+  If Not (LoggedIn) Or Not (Players[CurrentPlayer].Active) Then
+    exit;
+  TheIDs := [1351, 1357, 1361, 6739, 1348, 1355, 1359, 1353];
+  GameTab(tab_Inv);
+  Wait(500 + Random(200));
+  if(R_ItemIDExistsEx(TheIDs, Hatchet))then
+    begin
+      Players[CurrentPlayer].Booleans[0] := False;
+      Writeln('Hatchet is in inventory.');
+      Exit;
+    end else
+      GameTab(tab_Equip);
+      Wait(500 + Random(200));
+      Equipped := GetEquippedIDAt(3);
+      if(InIntArray(TheIDs, Equipped))then
+        begin
+          Players[CurrentPlayer].Booleans[0] := True;
+          Writeln('Hatchet is equipped.');
+          Exit;
+        end;
+End;
+
+Procedure LevelTalking;
+Begin
+     If Not (LoggedIn) Or Not (Players[CurrentPlayer].Active) Then
+          exit;
+     If (FindBlackChatMessage('Congratulations')) Or
+          (FindBlackChatMessage('you just advance')) Or
+          InChat('Congratulations') Or InChat('just advance') Or
+               InChat('congratulations,') Or LevelUp Then
+          if TalkAboutLevel then Begin
+               Inc(Players[CurrentPlayer].Integers[2]);
+               Writeln('Woooot we have now gained'+IntToStr(Players[CurrentPlayer].Integers[2])+' levels!');
+               Begin
+                    Case Random(10) Of
+                         0: TypeSend('Guess what... I levelled!');
+                         1: TypeSend('w00t lvld');
+                         2: TypeSend('lvld again...');
+                         3: TypeSend('grats me! I lvld!');
+                         4: TypeSend('gay lag, didnt realise i lvld');
+                         5: TypeSend('woopdewoop');
+                         6: TypeSend('this levelling stuff is getting boring...');
+                         7: TypeSend('dangdarnit, I jooost lavallled');
+                         8: TypeSend('can we have a party cause i just lvld');
+                         9: TypeSend('house party at mine! jokes...');
+                    End;
+               End;
+          End;
+End;
+
+Procedure ProgressReport;
+Begin
+    LevelTalking;
+    cleardebug;
+    Writeln('[-----------------------------]');
+    Writeln('[     BoomGoesTheWillows      ]');
+    Writeln('[-----------------------------]');
+    Writeln(' We worked for ' + TimeRunning);
+    Writeln(' Booomed ' + IntToStr(Players[CurrentPlayer].Integers[0])+' Willows');
+    Writeln(' Loads Done:' + IntToStr(Players[CurrentPlayer].Integers[1]));
+    Writeln(' Leveled ' + IntToStr(Players[CurrentPlayer].Integers[2]));
+    Writeln(' Antibanned ' + IntToStr(Players[CurrentPlayer].Integers[3]));
+    Writeln('[-----------------------------]');
+End;
+
+procedure PrintOnSmart(TP: TStringArray; Placement: TPoint; Colour, Shadow: integer);
+var
+ mx, my, Pic, I, B, H, TPH, Numb: Integer;
+ TTP: TPointArray;
+ Canvas: TCanvas;
+begin
+  SmartSetDebug(True);
+  GetClientDimensions(mx,my);
+  Pic := BitmapFromString(mx,my,'');
+  TPH := High(TP);
+  for I := 0 to TPH do
+  begin
+    TTP := LoadTextTPA(TP[i], SmallChars, H);
+    for B := 0 to High(TTP) do
+    begin
+      Numb := ((I + 1) * 13);
+      FastSetPixel(Pic, TTP[b].x + 1, TTP[b].y + Numb + 1, Shadow);
+      FastSetPixel(Pic, TTP[b].x, TTP[b].y + Numb, Colour);
+    end;
+  end;
+  Canvas := TCANVAS.Create;
+  Canvas.Handle := SmartGetDebugDC;
+  DrawBitmap(Pic, Canvas, Placement.x, Placement.y);
+  FreeBitmap(Pic);
+end;
+
+Procedure DoPaint;
+var
+  I: Integer;
+begin
+  PrintOnSmart(['  Boom Goes The Willows'],Point(22, 30), 62207, 131072);
+             PrintOnSmart([
+               'Worked for: ' + TimeRunning,
+               'Players active: ' + ToStr(PlayersActive) + '/' + ToStr(HowManyPlayers),
+               'Loads Done: ' + IntToStr(Players[CurrentPlayer].Integers[1]),
+               'Levelled: '+ IntToStr(Players[CurrentPlayer].Integers[2]),
+               'Antibanned: ' + IntToStr(Players[CurrentPlayer].Integers[3]),
+               ''], Point(30, 60), 1959605, 131072);
+end;
+
+procedure AntiBan;
+begin
+  case (Random(400)) of
+    0: RandomRClick;
+    1: MouseSpeed := 15 + Random(5);
+    2: PickUpMouse;
+    3: BoredHuman;
+    4..400: begin
+      Wait(100 + Random(50));
+      Exit;
+    end;
+  end;
+  Inc(Players[CurrentPlayer].Integers[3]);
+end;
+
+Procedure AntiRandoms;
+Begin
+    If Not (LoggedIn) Or Not (Players[CurrentPlayer].Active) Then
+        NextPlayer(false);
+        LevelTalking;
+    FindNormalRandoms;
+    Wait(300+Random(200));
+    FindLamp('Woodcutting');
+End;
+
+Function WalkToTrees: Boolean;
+Begin
+  If Not LoggedIn Then
+    Exit;
+    if not WalkToTile(Point(3085, 3237), 1, 1) then
+    begin
+    Exit;
+    end;
+  Wait(1000+ Random(1000));
+  LogCountStart := R_InvCount;
+  Players[CurrentPlayer].Loc := 'at trees';
+  Result := True;
+End;
+
+Function FindTrees(Var X, Y : Integer; W, H, X1, Y1, X2, Y2 : Integer): Boolean;
+Var
+  i : Integer;
+  TPA : TPointArray;
+  ATPA : T2DPointArray;
+begin
+  if not LoggedIn then Exit;
+  ColorToleranceSpeed(2);
+  SetColorSpeed2Modifiers(0.17, 1.87);
+  begin
+    FindColorsSpiralTolerance(x, y, TPA, 2904128, MSX1, MSY1, MSX2, MSY2, 6);
+    SetColorToleranceSpeed(1);
+    ATPA := SplitTPAEx(TPA, 40, 40);
+    if (Length(ATPA) = 0) then
+      Exit;
+    SortATPAFromFirstPoint(ATPA, Point(MSCX, MSCY));
+    h := High(ATPA);
+    for i := 0 to h do
+    begin;
+      MiddleTPAEx(ATPA[i], x, y);
+      if CharacterMoving then
+        Repeat
+          Wait(100)
+        Until not CharacterMoving;
+      MMouse(x, y, 3, 3);
+      if WaitUpText('illo', 450) then begin
+        Result := True;
+        break;
+      end;
+    end;
+    Writeln('Found the Willow!');
+  End;
+End;
+
+Function FoundTrees(Var X, Y : Integer): Boolean;
+Begin
+  Result := FindTrees(X, Y, 35, 35, MSX1, MSY1, MSX2, MSY2);
+End;
+
+Function CuttingCheck:Boolean;
+Begin
+  if CharacterAnimating then
+    Wait(200);
+      if CharacterAnimating then
+  Result := True;
+End;
+Function BoomTrees: Boolean;
+Var
+  X, Y, Tried : Integer;
+Begin
+  if Not LoggedIn then
+    Exit;
+  LevelTalking;
+  Repeat
+    if Tried = 10 then
+    begin
+      Writeln('No Willows found, exiting.');
+      Exit;
+    end;
+    if not FoundTrees(X, Y) then
+    Begin
+      Inc(Tried);
+      Wait(2000 + Random(500));
+      Continue;
+    End;
+    Mouse(X, Y, 0, 0, True);
+    Wait(1500 + Random(500));
+    While CuttingCheck do
+    Begin
+      LevelTalking;
+      DoPaint;
+      Antiban;
+      AntiRandoms;
+    end;
+      if InvFull then
+        Break;
+  Until InvFull;
+  Players[CurrentPlayer].Loc := 'chopped trees';
+  Result := True;
+End;
+
+Function WalkToBank: Boolean;
+Begin
+  If Not LoggedIn Then
+    Exit;
+  If Not WalkToTile(Point(3092, 3244), 1, 1) Then
+  Exit;
+  Players[CurrentPlayer].Loc := 'at bank';
+  Result := True;
+End;
+
+Function Bank: Boolean;
+Var
+i, LogCountEnd, LogCountFinal : integer;
+Begin
+  If Not LoggedIn Then
+    Exit;
+    Wait(1000+ Random(1000));
+    LogCountEnd := R_CountItemID(1519);
+  If Not OpenBankFast(Bank_DR) Then
+    If Not OpenBankQuiet(Bank_DR) Then
+      Exit;
+     for i := 1 + Integer(not Players[CurrentPlayer].Booleans[0]) to 28 do
+      begin
+        Deposit(i, 28, True);
+      end;
+  Players[CurrentPlayer].Loc := 'banked';
+  Result := True;
+  CloseBank;
+  Inc(Players[CurrentPlayer].Integers[1]);
+  LogCountFinal := (LogCountEnd - LogCountStart);
+  IncEx(Players[CurrentPlayer].Integers[0], LogCountFinal);
+  ProgressReport;
+End;
+
+Procedure MainLoop;
+Begin
+  repeat
+  Case Lowercase(Players[CurrentPlayer].Loc) of
+    'banked':
+    if WalkToTrees then
+      Players[CurrentPlayer].Loc := 'at trees';
+    'at trees':
+    if BoomTrees then
+      Players[CurrentPlayer].Loc := 'chopped trees';
+    'chopped trees':
+    if WalkToBank then
+      Players[CurrentPlayer].Loc := 'at bank';
+    'at bank':
+    if Bank then
+      Players[CurrentPlayer].Loc := 'banked';
+  end;
+  until(Players[CurrentPlayer].Integers[1] >= Players[CurrentPlayer].Integers[4]);
+End;
+
+{Int[0] = Trees Chopped
+Int[1] = Loads Done
+Int[2] = Levels
+Int[3] = Antiban
+Int[4] = Loads to do
+Bool[0] = Axe}
+
+begin
+    ClearDebug;
+    ClearReport;
+    Smart_Server := 17;
+    Smart_Members := false;
+    Smart_Signed := true;
+    Smart_SuperDetail := false;
+    SetupSRL;
+    begin
+        declareplayers;
+        LoginPlayer;
+        ProgressReport;
+        AxeWielded;
+        MakeCompass('North');
+        SetAngle(True);
+        Gametab(tab_Inv);
+  repeat
+    MainLoop
+  until(false);
+    end;
+end.
